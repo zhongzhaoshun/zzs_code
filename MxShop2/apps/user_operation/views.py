@@ -1,12 +1,13 @@
 from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework import mixins
-from .models import UserFav, UserLeavingMessage,UserAddress
+from .models import UserFav, UserLeavingMessage, UserAddress
 from .serializer import UserFavSerializer, UserFavDetailSerializer, LeavingMessageSealizer, AddessSerializer
 from rest_framework.permissions import IsAuthenticated
 from utils.permissions import IsOwnerOrReadOnly
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from rest_framework.authentication import SessionAuthentication
+from rest_framework.response import Response
 
 
 # Create your views here.
@@ -32,6 +33,8 @@ class UserFavViewset(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
     authentication_classes = [JSONWebTokenAuthentication, SessionAuthentication]
     lookup_field = "goods_id"
 
+
+
     # 重载serializer这个函数，用来动态加载序列化
     def get_serializer_class(self):
         # 获取详细信息的时候
@@ -45,6 +48,11 @@ class UserFavViewset(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
 
     def get_queryset(self):
         return UserFav.objects.filter(user=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 
 # 用户留言功能

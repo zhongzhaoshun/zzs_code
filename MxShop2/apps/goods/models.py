@@ -39,7 +39,8 @@ class GoodsCategory(models.Model):
 # 品牌
 class GoodsCategoryBrand(models.Model):
     """品牌名"""
-    category = models.ForeignKey(GoodsCategory,null=True,blank=True,verbose_name="商品名称",on_delete=models.CASCADE)
+    category = models.ForeignKey(GoodsCategory, null=True, blank=True, related_name="brands", verbose_name="商品名称",
+                                 on_delete=models.CASCADE)
     # 品牌名
     name = models.CharField(default="", max_length=30, verbose_name="品牌名", help_text="品牌名")
     # 品牌描述
@@ -92,6 +93,19 @@ class Goods(models.Model):
     # 热卖商品
     is_hot = models.BooleanField(default=False, verbose_name="是否热销")
     add_time = models.DateTimeField(default=datetime.now, verbose_name="添加时间")
+
+
+# 在首页里显示的广告位
+class IndexAd(models.Model):
+    category = models.ForeignKey(GoodsCategory, related_name="category", verbose_name="商品类目", on_delete=models.CASCADE)
+    goods = models.ForeignKey(Goods, related_name="goods", on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = "首页商品类别广告"
+        verbose_name_plural = verbose_name
+
+    def __str__(self):
+        return self.goods.name
 
 
 # 商品图片

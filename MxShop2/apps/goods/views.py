@@ -3,7 +3,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Goods, GoodsCategory
+from .models import Goods, GoodsCategory, Banner
 from rest_framework import mixins
 from rest_framework import generics
 from rest_framework import viewsets
@@ -12,7 +12,7 @@ from .filters import GoodsFilter
 from rest_framework import filters
 from rest_framework.authentication import TokenAuthentication
 
-from .serializers import GoodsSerializer, CategorySerializer
+from .serializers import GoodsSerializer, CategorySerializer, BannerSerializer, IndexCategorySerializer
 
 
 # Create your views here.
@@ -30,7 +30,7 @@ class GoodsPagination(PageNumberPagination):
 
 
 # GenericAPIView底层还是实现的APIview，还有一个mixins.CreateModelMixin，因为这个项目是后台添加商品的，不用用户添加商品，所以不用这个view了
-class GoodsListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,viewsets.GenericViewSet):
+class GoodsListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """
     商品列表，搜索，过滤，分页，排序
     """
@@ -50,8 +50,15 @@ class GoodsListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,viewsets
     # 要排序的字段
     ordering_fields = ['sold_num', 'shop_price']
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.click_num += 1
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
-class CategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,viewsets.GenericViewSet):
+
+class CategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """
     list:
         商品分类列表数据
@@ -63,3 +70,16 @@ class CategoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,viewsets.
     # 获取一类数据
     queryset = GoodsCategory.objects.filter(category_type=1)
     serializer_class = CategorySerializer
+
+
+class BannerViewset(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """获取轮播图列表"""
+    queryset = Banner.objects.all().order_by("index")
+    serializer_class = BannerSerializer
+
+
+class IndexCategoryViewset(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """首页商品分类数据"""
+    # 只获取两种
+    queryset = GoodsCategory.objects.filter(is_tab=True, name__in=["生鲜食品", "酒水饮料"])
+    serializer_class = IndexCategorySerializer

@@ -23,7 +23,7 @@ from MxShop2.settings import MEDIA_ROOT
 from django.views.static import serve
 # 引入drf的文档
 from rest_framework.documentation import include_docs_urls
-from goods.views import GoodsListViewSet, CategoryViewSet
+from goods.views import GoodsListViewSet, CategoryViewSet,BannerViewset,IndexCategoryViewset
 from rest_framework.routers import DefaultRouter
 from rest_framework.authtoken import views
 from rest_framework_jwt.views import obtain_jwt_token
@@ -54,6 +54,10 @@ router.register(r'address', AddressViewSet, basename="address")
 router.register(r'shopcarts', ShoppingCartViewset, basename="shopcarts")
 # 用户订单
 router.register(r'orders', OrderViewSet, basename="orders")
+# 轮播图
+router.register(r'banners', BannerViewset, basename="banners")
+# 首页商品分类数据
+router.register(r'indexGoods', IndexCategoryViewset, basename="indexGoods")
 
 # goods_list = GoodsListViewSet.as_view({
 #     'get': 'list',
@@ -72,7 +76,7 @@ urlpatterns = [
     # 配置router的url
     path('', include(router.urls)),
     # indexurl
-    url(r'^index/', TemplateView.as_view(template_name="index.html")),
+    url(r'^index/', TemplateView.as_view(template_name="index.html"),name="index"),
     # 使用drf文档
     url(r"docs/", include_docs_urls(title="Fresh")),
     # JWT的认证接口

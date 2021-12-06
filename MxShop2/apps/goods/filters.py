@@ -25,4 +25,4 @@ class GoodsFilter(django_filters.rest_framework.FilterSet):
         # 指明要过滤那个模型
         model = Goods
         # 要和前端页面对应
-        fields = ['pricemin', 'pricemax','is_hot']
+        fields = ['pricemin', 'pricemax', 'is_hot', "is_new"]

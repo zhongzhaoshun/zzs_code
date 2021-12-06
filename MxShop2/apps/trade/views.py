@@ -11,8 +11,10 @@ from rest_framework import mixins
 from utils.alipay import AliPay
 from MxShop2 import settings
 from rest_framework.response import Response
+from django.shortcuts import redirect
 import time
 from datetime import datetime
+
 import random
 
 
@@ -122,7 +124,7 @@ class AliPayView(APIView):
             trade_no = process_dict.get("trade_no", None)
             # 支付宝返回的支付状态
             # trade_stauts = process_dict.get("tradeStatus", None)
-            trade_stauts = "已支付"
+            trade_stauts = "TRADE_SUCCESS"
             # 更新数据库的支付信息
             print(trade_stauts)
             existed_orders = OrderInfo.objects.filter(order_sn=order_sn)
@@ -134,7 +136,15 @@ class AliPayView(APIView):
                 # 支付时间
                 existed_order.pay_time = datetime.now()
                 existed_order.save()
-        return Response("success")
+            #  支付完成后跳转到支付页面，pay是前段判断的,max_age尽量设置的短一点，让他取一次就失效
+            response = redirect("index")
+            response.set_cookie("nextPath","pay",max_age=10)
+            return response
+        else:
+            # 如果支付验证失败了，直接跳转到首页
+            response = redirect("index")
+            return response
+
 
     def post(self, request):
         """
