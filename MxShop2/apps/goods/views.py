@@ -30,7 +30,7 @@ class GoodsPagination(PageNumberPagination):
 
 
 # GenericAPIView底层还是实现的APIview，还有一个mixins.CreateModelMixin，因为这个项目是后台添加商品的，不用用户添加商品，所以不用这个view了
-class GoodsListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class   GoodsListViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """
     商品列表，搜索，过滤，分页，排序
     """

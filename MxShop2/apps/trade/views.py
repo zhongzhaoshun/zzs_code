@@ -37,6 +37,37 @@ class ShoppingCartViewset(viewsets.ModelViewSet):
     queryset = ShoppingCart.objects.all()
     lookup_field = "goods_id"
 
+    # 商品添加到购物车，库存数就减
+    def perform_create(self, serializer):
+        shop_cart = serializer.save()
+        # 因为serializer里用的是ShoppingCart
+        goods = shop_cart.goods
+        goods.goods_num -= shop_cart.nums
+        goods.save()
+
+    # 用户删除购物车商品，也会修改商品库存，这里重写的是mixins.DestroyModelMixin方法
+    def perform_destroy(self, instance):
+        # goods一定要在删除之前取
+        goods = instance.goods
+        goods.goods_num += instance.nums
+        goods.save()
+        instance.delete()
+
+    # 用户更新购物车商品数量时候，也会修改商品库存，这里重写的是 mixins.UpdateModelMixin方法
+    # 这里比较重要了，因为有可能是增加，或者减少
+    def perform_update(self, serializer):
+        # 获取到已有的值
+        existed_record = ShoppingCart.objects.get(id=serializer.instance.id)
+        # 获取到保存之前的值
+        existed_nums = existed_record.nums
+        # 获取保存之后的值
+        saved_record = serializer.save()
+        # 如果nums大于0，也就是保存之后的值大于保存之前的值，也就是进行了增的操作，如果修改后的数量小于修改前的数量，就是进行了减的操作
+        nums = saved_record.nums - existed_nums
+        goods = saved_record.goods
+        goods.goods_num -= nums
+        goods.save()
+
     # 动态生成serializer
     def get_serializer_class(self):
         if self.action == "list":
@@ -126,11 +157,19 @@ class AliPayView(APIView):
             # trade_stauts = process_dict.get("tradeStatus", None)
             trade_stauts = "TRADE_SUCCESS"
             # 更新数据库的支付信息
-            print(trade_stauts)
             existed_orders = OrderInfo.objects.filter(order_sn=order_sn)
             for existed_order in existed_orders:
+
+                # 支付成功后，修改商品数量，直接用related_name就能获取到
+                order_goods = existed_order.goods.all()
+                for order_good in order_goods:
+                    # 获取到商品
+                    goods = order_good.goods
+                    goods.sold_num += order_good.goods_num
+                    goods.save()
+
                 # 修改支付状态
-                existed_order.pay_status= trade_stauts
+                existed_order.pay_status = trade_stauts
                 # 支付订单号
                 existed_order.trade_no = trade_no
                 # 支付时间
@@ -138,13 +177,14 @@ class AliPayView(APIView):
                 existed_order.save()
             #  支付完成后跳转到支付页面，pay是前段判断的,max_age尽量设置的短一点，让他取一次就失效
             response = redirect("index")
-            response.set_cookie("nextPath","pay",max_age=10)
+            response.set_cookie("nextPath", "pay", max_age=10)
+            print("验证成功")
             return response
         else:
             # 如果支付验证失败了，直接跳转到首页
             response = redirect("index")
+            print("验证失败")
             return response
-
 
     def post(self, request):
         """
